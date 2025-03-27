@@ -18,11 +18,11 @@ public class User {
     private Long id;
 
     @Email(message = "Неверный формат email")
-    @NotBlank(message = "Email не может быть пустым")
+    @NotBlank(message = "Email не может быть пустым или null")
     private String email;
 
-    @NotNull(message = "login пользователя не может быть null")
-    @Pattern(regexp = "\\S+", message = "login не должен содержать пробелы")
+    @NotBlank(message = "login не должен содержать пустым или null")
+    @Pattern(regexp = "\\S+", message = "login должен быть слитным")
     private String login;
 
     private String name;

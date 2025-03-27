@@ -8,15 +8,12 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/users") // обработка пути
 @Slf4j // private final static Logger log
 public class UserController {
     private final Map<Long, User> users = new HashMap<>();
-    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-    private final Validator validator = factory.getValidator();
 
     @GetMapping // get всех юзеров
     public Collection<User> findAll() { //возврат коллекции пользователей
@@ -24,9 +21,7 @@ public class UserController {
     }
 
     @PostMapping //post (новый юзер)
-    public User create(@RequestBody User user) throws ValidationException { //не стал @Valid делать
-        // Проверяем валидность пользователя
-        checkDataValidation(user);
+    public User create(@Valid @RequestBody User user) { //@Valid валидация
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
             log.info("Логин присвоен имени  {}", user.getLogin());
@@ -39,16 +34,15 @@ public class UserController {
     }
 
     @PutMapping
-    public User update(@RequestBody User user) throws ValidationException { //не стал @Valid делать
+    public User update(@Valid @RequestBody User user) { //@Valid валидация
         // проверяем необходимые условия
         if (users.containsKey(user.getId())) { // user с указанным идентификатором существует
-            checkDataValidation(user); // валидация
             log.info("Обновлен элемент: {}", user);
             users.put(user.getId(), user);
             return user;
         }
-        log.error("нельзя обновить пользователя с таким id: {}", user);
-        throw new ValidationException("Пользователь с id = " + user.getId() + " не найден");
+        log.error("User update не выполнен - Не валидный Id");
+        throw new ValidationException("User update не выполнен - Не валидный Id");
     }
 
     //----------------------вспомогательные методы----------------------
@@ -61,17 +55,5 @@ public class UserController {
                 .max()
                 .orElse(0);
         return ++currentMaxId;
-    }
-
-    // для валидации пользователя
-    private void checkDataValidation(User user) throws ValidationException {
-        Set<ConstraintViolation<User>> violations = validator.validate(user);
-        if (!violations.isEmpty()) {
-            // Если есть нарушения валидации, выводим ошибки
-            for (ConstraintViolation<User> violation : violations) {
-                throw new ValidationException("Ошибка валидации: " + violation.getPropertyPath() +
-                        " - " + violation.getMessage());
-            }
-        }
     }
 }

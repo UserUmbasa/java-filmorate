@@ -17,11 +17,10 @@ public class Film {
 
     private Long id;
 
-    @NotNull(message = "name фильма не может быть null")
-    @Size(min = 1, max = 200, message = "имя фильма не может быть пустым")
+    @NotBlank(message = "name фильма не может быть пустым или null")
     private String name;
 
-    @NotNull(message = "description фильма не может быть null")
+    @NotBlank(message = "description фильма не может быть пустым или null")
     @Size(min = 1, max = 200, message = "Длина описания должна быть от 1 до 200 символов")
     private String description;
 
