@@ -8,7 +8,9 @@ import java.util.List;
 @Getter
 @RequiredArgsConstructor
 public class ValidationErrorResponse {
+
     private  List<Violation> violations;
+
     public ValidationErrorResponse(List<Violation> violations) {
         this.violations = violations;
     }
