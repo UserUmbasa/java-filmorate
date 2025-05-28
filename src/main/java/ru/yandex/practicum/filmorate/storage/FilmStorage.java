@@ -1,0 +1,13 @@
+package ru.yandex.practicum.filmorate.storage;
+
+import ru.yandex.practicum.filmorate.model.Film;
+
+import java.util.Collection;
+import java.util.Optional;
+
+public interface FilmStorage {
+    Collection<Film> findAll();  // абстрактный метод
+    Optional<Film> findById(Long id);
+    void addFilm(Film film);
+    //void updateFilm(Film film);
+}
