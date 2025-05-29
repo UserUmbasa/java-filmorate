@@ -36,5 +36,5 @@ public class User {
     private LocalDate birthday;
 
     //нельзя добавить одного человека в друзья дважды
-    private Set<Long>friends = new HashSet<>();
+    private Set<Long> friends = new HashSet<>();
 }
