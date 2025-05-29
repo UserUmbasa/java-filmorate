@@ -13,7 +13,10 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = MinDateValidator.class)
 public @interface MinDate {
     String message() default "Дата не может быть раньше минимальной";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
+
     String value();
 }
