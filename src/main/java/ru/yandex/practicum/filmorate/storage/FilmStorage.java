@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 public interface FilmStorage {
-    Collection<Film> findAll();  // абстрактный метод
+    Collection<Film> findAll();
     Optional<Film> findById(Long id);
     void addFilm(Film film);
     //void updateFilm(Film film);

@@ -15,9 +15,7 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFound(final NotFoundException e) {
-        return new ErrorResponse(
-                "Ошибка данных", e.getMessage()
-        );
+        return new ErrorResponse("Ошибка данных", e.getMessage());
     }
 
     @ExceptionHandler
@@ -28,6 +26,4 @@ public class ErrorHandler {
                 .collect(Collectors.joining("; "));
         return new ErrorResponse("Ошибка валидации", message);
     }
-
-
 }

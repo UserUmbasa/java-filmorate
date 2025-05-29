@@ -1,22 +1,18 @@
 package ru.yandex.practicum.filmorate.controller;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ErrorResponse;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.validator.Marker;
 import java.util.*;
 
 @Validated
 @RestController
-// @RequiredArgsConstructor автоинжентинг
-@RequestMapping("/users") // обработка пути
+// @RequiredArgsConstructor автоинжентинг - пока не хочу использовать
+@RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;

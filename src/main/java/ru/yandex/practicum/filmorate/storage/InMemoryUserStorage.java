@@ -1,12 +1,10 @@
 package ru.yandex.practicum.filmorate.storage;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.*;
 
-@Slf4j // private final static Logger log
 @Component
 public class InMemoryUserStorage implements UserStorage {
     private final Map<Long, User> users = new HashMap<>();
@@ -25,11 +23,9 @@ public class InMemoryUserStorage implements UserStorage {
     public void addUser(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
-            log.info("Логин присвоен имени  {}", user.getLogin());
         }
-        user.setId(getNextId()); // автоматически устанавливает id
+        user.setId(getNextId());
         users.put(user.getId(), user);
-        log.info("Добавлен элемент: {}", user);
     }
 
     // для генерации идентификатора нового пользователя

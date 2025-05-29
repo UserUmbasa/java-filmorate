@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * фильмов по количеству лайков
  */
 @Service
-@Slf4j // private final static Logger log
+@Slf4j //логгер
 public class FilmService {
     private final FilmStorage filmStorage;
     private final UserService userService;
@@ -48,7 +48,8 @@ public class FilmService {
                 .orElseThrow(() -> new NotFoundException("Фильм с id " + id + " не найден"));
     }
 
-    public Collection<Film> findFilmLike(Integer count){
+    // возвращает список фильмов по лайкам
+    public Collection<Film> findFilmLike(Integer count) {
         if (count == null) {
             count = 10;
         }
@@ -56,19 +57,19 @@ public class FilmService {
                 .sorted(likesSizeComparator.reversed())
                 .collect(Collectors.toList());
         int actualCount = Math.min(count, sortedFilms.size());
-        Collection<Film> result = sortedFilms.subList(0, actualCount);
-        return result;
+        return sortedFilms.subList(0, actualCount);
     }
 
     //добавление фильма
     public void addFilm(Film film) {
         filmStorage.addFilm(film);
+        log.info("Добавлен элемент: {}", film);
     }
 
     //обновление фильма
     public void updateFilm(Film film) {
         Film filmUpdate = findById(film.getId());
-        // Валидируем
+        // проверка полей через validator
         Set<ConstraintViolation<Film>> violations = validator.validate(film, Marker.OnCreate.class);
 
         // Если есть нарушения валидации, обрабатываем их
@@ -105,7 +106,7 @@ public class FilmService {
         }
     }
 
-    // поставить лайк (предположу, что айди пользователя существует)
+    // поставить лайк
     public void putLikeFilm(Long idFilm, Long idUser) {
         User user = userService.findById(idUser);
         Film result = findById(idFilm);

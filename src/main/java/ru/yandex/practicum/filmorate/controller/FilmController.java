@@ -1,15 +1,14 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.validator.Marker;
 import java.util.Collection;
-import java.util.List;
 
 @Validated
 @RestController
@@ -55,17 +54,17 @@ public class FilmController {
         return film;
     }
 
-    // пользователь ставит лайк фильму DELETE /films/{id}/like/{userId}
+    // пользователь ставит лайк фильму
     @PutMapping("/{id}/like/{userId}")
-    public Film putLike(@PathVariable Long id, @PathVariable Long userId) {
+    public ResponseEntity<?> putLike(@PathVariable Long id, @PathVariable Long userId) {
         filmService.putLikeFilm(id, userId);
-        return filmService.findById(id);
+        return ResponseEntity.ok().build();
     }
 
     // пользователь удаляет лайк
     @DeleteMapping("/{id}/like/{userId}")
-    public Film deleteLike(@PathVariable Long id, @PathVariable Long userId) {
+    public ResponseEntity<?> deleteLike(@PathVariable Long id, @PathVariable Long userId) {
         filmService.deleteLikeFilm(id, userId);
-        return filmService.findById(id);
+        return ResponseEntity.ok().build();
     }
 }

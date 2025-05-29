@@ -12,13 +12,14 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.filmorate.validator.Marker;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * будет отвечать за такие операции с пользователями, как добавление в друзья, удаление из друзей,
  * вывод списка общих друзей
  */
 @Service
-@Slf4j // private final static Logger log
+@Slf4j // логгер
 public class UserService {
     private final UserStorage userStorage;
     private final Validator validator;
@@ -36,7 +37,6 @@ public class UserService {
 
     //возврат пользователя по айди
     public User findById(Long id) {
-        // log.error("User update не выполнен - Не валидный Id");
         return userStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + id + " не найден"));
     }
@@ -53,22 +53,20 @@ public class UserService {
 
     // возврат списка друзей, общих с другим пользователем.
     public List<User> findMutualFriends(Long id, Long otherId) {
-        Set<Long> set1 = findById(id).getFriends();
-        Set<Long> set2 = findById(otherId).getFriends();
-        Set<Long> intersection = new HashSet<>(set1);
-        intersection.retainAll(set2);
-        List<User> result = new ArrayList<>();
-        for (User user : userStorage.findAll()) {
-            if (intersection.contains(user.getId())) {
-                result.add(user);
-            }
-        }
-        return result;
+        Set<Long> friendsOfUser1 = findById(id).getFriends();
+        Set<Long> friendsOfUser2 = findById(otherId).getFriends();
+        Set<Long> mutualFriendIds = new HashSet<>(friendsOfUser1);
+        mutualFriendIds.retainAll(friendsOfUser2);
+        List<User> mutualFriends = mutualFriendIds.stream()
+                .map(this::findById)
+                .collect(Collectors.toList());
+        return mutualFriends;
     }
 
     // добавление пользователя
     public void addUser(User user) {
         userStorage.addUser(user);
+        log.info("Добавлен элемент: {}", user);
     }
 
     // добавление друга по айди

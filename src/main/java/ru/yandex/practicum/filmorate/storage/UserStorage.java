@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 public interface UserStorage {
-    Collection<User> findAll();  // абстрактный метод
+    Collection<User> findAll();
     Optional<User> findById(Long id);
     void addUser(User user);
     //void updateUser(User user);
