@@ -10,6 +10,4 @@ public interface UserStorage {
     Optional<User> findById(Long id);
 
     void addUser(User user);
-
-    //void updateUser(User user);
 }

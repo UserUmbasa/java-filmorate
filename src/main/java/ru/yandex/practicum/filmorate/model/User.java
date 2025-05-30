@@ -35,6 +35,5 @@ public class User {
     @PastOrPresent(groups = Marker.OnCreate.class, message = "Дата рождения должна быть в прошлом")
     private LocalDate birthday;
 
-    //нельзя добавить одного человека в друзья дважды
     private Set<Long> friends = new HashSet<>();
 }

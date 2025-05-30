@@ -11,6 +11,4 @@ public interface FilmStorage {
     Optional<Film> findById(Long id);
 
     void addFilm(Film film);
-
-    //void updateFilm(Film film);
 }

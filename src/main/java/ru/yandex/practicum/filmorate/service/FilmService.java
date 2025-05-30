@@ -2,14 +2,13 @@ package ru.yandex.practicum.filmorate.service;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.validator.Marker;
 
 import java.util.*;
@@ -20,7 +19,8 @@ import java.util.stream.Collectors;
  * фильмов по количеству лайков
  */
 @Service
-@Slf4j //логгер
+@Slf4j
+@RequiredArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
     private final UserService userService;
@@ -30,25 +30,15 @@ public class FilmService {
                     film1.getLikes().size(),
                     film2.getLikes().size());
 
-    @Autowired
-    public FilmService(InMemoryFilmStorage filmStorage, Validator validator, UserService userService) {
-        this.filmStorage = filmStorage;
-        this.validator = validator;
-        this.userService = userService;
-    }
-
-    //возврат коллекции фильмов
     public Collection<Film> findAll() {
         return filmStorage.findAll();
     }
 
-    //возврат фильма по айди
     public Film findById(Long id) {
         return filmStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Фильм с id " + id + " не найден"));
     }
 
-    // возвращает список фильмов по лайкам
     public Collection<Film> findFilmLike(Integer count) {
         if (count == null) {
             count = 10;
@@ -60,13 +50,11 @@ public class FilmService {
         return sortedFilms.subList(0, actualCount);
     }
 
-    //добавление фильма
     public void addFilm(Film film) {
         filmStorage.addFilm(film);
         log.info("Добавлен элемент: {}", film);
     }
 
-    //обновление фильма
     public void updateFilm(Film film) {
         Film filmUpdate = findById(film.getId());
         // проверка полей через validator
@@ -106,14 +94,12 @@ public class FilmService {
         }
     }
 
-    // поставить лайк
     public void putLikeFilm(Long idFilm, Long idUser) {
         User user = userService.findById(idUser);
         Film result = findById(idFilm);
         result.getLikes().add(user.getId());
     }
 
-    // пользователь удаляет лайк
     public void deleteLikeFilm(Long idFilm, Long idUser) {
         User user = userService.findById(idUser);
         Film result = findById(idFilm);

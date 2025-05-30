@@ -34,6 +34,5 @@ public class Film {
     @Positive(groups = Marker.OnCreate.class)
     private Long duration;
 
-    //условие «один пользователь — один лайк» для оценки фильмов.
     Set<Long> likes = new HashSet<>();
 }

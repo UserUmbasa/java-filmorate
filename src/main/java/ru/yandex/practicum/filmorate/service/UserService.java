@@ -2,12 +2,11 @@ package ru.yandex.practicum.filmorate.service;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.filmorate.validator.Marker;
 
@@ -19,29 +18,21 @@ import java.util.stream.Collectors;
  * вывод списка общих друзей
  */
 @Service
-@Slf4j // логгер
+@Slf4j
+@RequiredArgsConstructor
 public class UserService {
     private final UserStorage userStorage;
     private final Validator validator;
 
-    @Autowired
-    public UserService(InMemoryUserStorage userStorage, Validator validator) {
-        this.userStorage = userStorage;
-        this.validator = validator;
-    }
-
-    //возврат коллекции пользователей
     public Collection<User> findAll() {
         return userStorage.findAll();
     }
 
-    //возврат пользователя по айди
     public User findById(Long id) {
         return userStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + id + " не найден"));
     }
 
-    // возвращаем список пользователей, являющихся его друзьями по айди
     public List<User> findUserFriends(Long id) {
         List<User> usersFriends = new ArrayList<>();
         User user = findById(id);
@@ -51,7 +42,6 @@ public class UserService {
         return usersFriends;
     }
 
-    // возврат списка друзей, общих с другим пользователем.
     public List<User> findMutualFriends(Long id, Long otherId) {
         Set<Long> friendsOfUser1 = findById(id).getFriends();
         Set<Long> friendsOfUser2 = findById(otherId).getFriends();
@@ -63,13 +53,11 @@ public class UserService {
         return mutualFriends;
     }
 
-    // добавление пользователя
     public void addUser(User user) {
         userStorage.addUser(user);
         log.info("Добавлен элемент: {}", user);
     }
 
-    // добавление друга по айди
     public void addFriends(Long id, Long friendId) {
         User user1 = findById(id);
         User user2 = findById(friendId);
@@ -77,7 +65,6 @@ public class UserService {
         user2.getFriends().add(id);
     }
 
-    // обновление данных пользователя
     public void updateUser(User user) {
         User userUpdate = findById(user.getId());
         // Валидация user
@@ -116,7 +103,6 @@ public class UserService {
         }
     }
 
-    // удаление из друзей по айди
     public void removeFriend(Long id, Long friendId) {
         User user1 = findById(id);
         User user2 = findById(friendId);

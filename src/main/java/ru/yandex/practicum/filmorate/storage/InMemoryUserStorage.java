@@ -14,7 +14,6 @@ public class InMemoryUserStorage implements UserStorage {
         return users.values();
     }
 
-    // возврат пользователя по айди
     public Optional<User> findById(Long id) {
         return Optional.ofNullable(users.get(id));
     }
@@ -28,7 +27,6 @@ public class InMemoryUserStorage implements UserStorage {
         users.put(user.getId(), user);
     }
 
-    // для генерации идентификатора нового пользователя
     private long getNextId() {
         long currentMaxId = users.keySet()
                 .stream()
