@@ -6,7 +6,6 @@ import java.time.LocalDate;
 
 @Data
 public class MinDateValidator implements ConstraintValidator<MinDate, LocalDate> {
-
     private LocalDate minDate;
 
     @Override

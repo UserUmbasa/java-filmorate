@@ -5,6 +5,8 @@ import lombok.Data;
 import ru.yandex.practicum.filmorate.validator.Marker;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Модель данных приложения.
@@ -32,4 +34,6 @@ public class User {
     @NotNull(groups = Marker.OnCreate.class, message = "Дата рождения не может быть null")
     @PastOrPresent(groups = Marker.OnCreate.class, message = "Дата рождения должна быть в прошлом")
     private LocalDate birthday;
+
+    private Set<Long> friends = new HashSet<>();
 }

@@ -4,6 +4,8 @@ import lombok.Data;
 import ru.yandex.practicum.filmorate.validator.Marker;
 import ru.yandex.practicum.filmorate.validator.MinDate;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Модель данных приложения.
@@ -31,4 +33,6 @@ public class Film {
 
     @Positive(groups = Marker.OnCreate.class)
     private Long duration;
+
+    Set<Long> likes = new HashSet<>();
 }
