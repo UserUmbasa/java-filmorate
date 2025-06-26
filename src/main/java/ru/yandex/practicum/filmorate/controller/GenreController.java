@@ -27,9 +27,6 @@ public class GenreController {
 
     @GetMapping("/{id}")
     public GenreDto findByMpaId(@PathVariable Long id) {
-        if(!filmService.checkGenreExists(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID жанра");
-        }
         return filmService.findByGenreId(id);
     }
 }

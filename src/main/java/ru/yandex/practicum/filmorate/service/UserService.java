@@ -31,14 +31,14 @@ public class UserService {
     private final UserDtoMapper userDtoMapper;
 
     public UserDto findById(Long userId) {
-        if (!checkUserExists(userId)) {
+        if (checkUserExists(userId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID");
         }
         return userDtoMapper.mapToUserDto(userRepository.findById(userId));
     }
 
     public List<UserDto> findUserFriends(Long id) {
-        if (!checkUserExists(id)) {
+        if (checkUserExists(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ID пользователя не может быть null.");
         }
         List<User> result = friendShipsRepository.findUserFriends(id).orElse(new ArrayList<>());
@@ -46,7 +46,7 @@ public class UserService {
     }
 
     public List<UserDto> findMutualFriends(Long id, Long otherId) {
-        if(!checkUserExists(id) || !checkUserExists(otherId)) {
+        if (checkUserExists(id) || checkUserExists(otherId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID пользователя");
         }
         List<User> result = friendShipsRepository.findMutualFriends(id, otherId);
@@ -54,14 +54,14 @@ public class UserService {
     }
 
     public void addFriends(Long id, Long friendId) {
-        if(!checkUserExists(id) || !checkUserExists(friendId)) {
+        if (checkUserExists(id) || checkUserExists(friendId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID пользователя");
         }
         friendShipsRepository.addFriends(id,friendId);
     }
 
     public void updateUser(UserDto userDto) {
-        if (!checkUserExists(userDto.getId())) {
+        if (checkUserExists(userDto.getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Некорректный ID пользователя");
         }
         UserDto existingUser = findById(userDto.getId());
@@ -82,7 +82,7 @@ public class UserService {
     }
 
     public void removeFriend(Long id, Long friendId) {
-        if(!checkUserExists(id) || !checkUserExists(friendId)) {
+        if (checkUserExists(id) || checkUserExists(friendId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID");
         }
         friendShipsRepository.removeFriend(id, friendId);
@@ -103,10 +103,10 @@ public class UserService {
 
     //------------------вспомогательные методы---------------------------
     public boolean checkUserExists(Long userId) {
-        if(userId == null) {
-            return false;
+        if (userId == null) {
+            return true;
         }
-        return userRepository.existsUserById(userId);
+        return !userRepository.existsUserById(userId);
     }
 
     private List<UserDto> mapToUserDtoList(List<User> result) {

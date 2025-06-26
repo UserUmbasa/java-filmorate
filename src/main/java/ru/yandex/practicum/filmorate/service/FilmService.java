@@ -58,7 +58,7 @@ public class FilmService {
     }
 
     public void updateFilm(FilmDto filmDto) {
-        if(!checkFilmExists(filmDto.getId())) {
+        if (!checkFilmExists(filmDto.getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID фильма");
         }
         FilmDto existingFilm = findById(filmDto.getId());
@@ -73,20 +73,19 @@ public class FilmService {
             Map<String, String> errors = extractValidationErrors(e.getConstraintViolations());
             throw new ValidationException("Ошибки валидации", errors);
         }
-
         Film updatedFilm = FilmDtoMapper.mapToFilm(existingFilm);
         filmRepository.updateFilm(updatedFilm);
     }
 
     public void putLikeFilm(Long idFilm, Long idUser) {
-        if(!checkFilmExists(idFilm) && !checkUserExists(idUser)) {
+        if (!checkFilmExists(idFilm) && checkUserExists(idUser)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID");
         }
         likeRepository.save(List.of(new Like(idUser,idFilm)));
     }
 
     public void deleteLikeFilm(Long idFilm, Long idUser) {
-        if(!checkFilmExists(idFilm) && !checkUserExists(idUser)) {
+        if (!checkFilmExists(idFilm) && checkUserExists(idUser)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID");
         }
         likeRepository.delete(new Like(idFilm,idUser));
@@ -97,21 +96,21 @@ public class FilmService {
         List<Genre> genres = new ArrayList<>();
         List<Like> likes = new ArrayList<>();
         film = FilmDtoMapper.mapToFilm(filmDto);
-        if(filmDto.getMpa() != null  && !checkMpaExists(filmDto.getMpa().getId())) {
+        if (filmDto.getMpa() != null  && !checkMpaExists(filmDto.getMpa().getId())) {
             throw  new NotFoundException("такого рейтинга нет");
         }
         film.setRatingId(filmDto.getMpa().getId());
         if (filmDto.getGenres() != null) {
             for (GenreDto genreDto : filmDto.getGenres()) {
-                if(!checkGenreExists(genreDto.getId())){
+                if (checkGenreExists(genreDto.getId())) {
                     throw  new NotFoundException("такого жанра нет");
                 }
                 genres.add(genreRepository.findById(genreDto.getId()));
             }
         }
-        if(filmDto.getLikes() != null) {
+        if (filmDto.getLikes() != null) {
             for (Long userId : filmDto.getLikes()) {
-                if(!checkUserExists(userId)) {
+                if (checkUserExists(userId)) {
                     throw  new NotFoundException("такого user нет");
                 }
                 User result = userRepository.findById(userId);
@@ -128,7 +127,7 @@ public class FilmService {
     }
 
     public FilmDto findById(Long id) {
-        if(!checkFilmExists(id)) {
+        if (!checkFilmExists(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID фильма");
         }
         return filmDtoMapper.mapToFilmDto(filmRepository.findById(id));
@@ -156,7 +155,7 @@ public class FilmService {
     }
 
     public GenreDto findByGenreId(Long id) {
-        if(!checkGenreExists(id)) {
+        if (checkGenreExists(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID жанра");
         }
         return GenreDtoMapper.mapToGenreDto(genreRepository.findById(id));
@@ -164,17 +163,17 @@ public class FilmService {
 
     //-------------- вспомогательные методы ---------------
     public boolean checkFilmExists(Long filmId) {
-        if(filmId == null) {
+        if (filmId == null) {
             return false;
         }
         return filmRepository.existsFilmById(filmId);
     }
 
     public boolean checkUserExists(Long userId) {
-        if(userId == null) {
-            return false;
+        if (userId == null) {
+            return true;
         }
-        return userRepository.existsUserById(userId);
+        return !userRepository.existsUserById(userId);
     }
 
     public boolean checkMpaExists(Long mpaId) {
@@ -183,16 +182,16 @@ public class FilmService {
 
     public boolean checkGenreExists(Long genreId) {
         if (genreId == null) {
-            return false;
+            return true;
         }
-        return genreRepository.existsGenreById(genreId);
+        return !genreRepository.existsGenreById(genreId);
     }
 
     private Map<String, String> extractValidationErrors(Set<ConstraintViolation<?>> violations) {
         return violations.stream()
                 .collect(Collectors.toMap(
                         violation -> violation.getPropertyPath().toString(),
-                        violation -> violation.getMessage()
+                        ConstraintViolation::getMessage
                 ));
     }
 }

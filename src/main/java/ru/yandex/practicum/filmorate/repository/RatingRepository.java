@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.MPA;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,15 +23,10 @@ public class RatingRepository {
             "ELSE false END";
     private static final String FIND_ALL_QUERY = "SELECT * FROM age_ratings ORDER BY rating_id";
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM age_ratings WHERE rating_id = ?";
+    private static final String FIND_RATING_NAME_ID_QUERY = "SELECT rating_name FROM age_ratings WHERE rating_id = ?";
 
     public String getRatingNameById(Long ratingId) {
-        String sql = "SELECT rating_name FROM age_ratings WHERE rating_id = ?";
-        try {
-            return jdbc.queryForObject(sql, new Object[]{ratingId}, String.class);
-        } catch (EmptyResultDataAccessException e) {
-            // Рейтинг с таким ID не найден
-            throw new NotFoundException("Рейтинг с ID " + ratingId + " не найден");
-        }
+        return jdbc.queryForObject(FIND_RATING_NAME_ID_QUERY, new Object[]{ratingId}, String.class);
     }
 
     public Optional<MPA> findById(Long mpaId) {
