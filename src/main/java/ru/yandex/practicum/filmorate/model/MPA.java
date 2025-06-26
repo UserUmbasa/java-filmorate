@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class MPA {
     private Long id;
-    private String name ;
+    private String name;
 
     public MPA(Long id, String name) {
         this.id = id;
