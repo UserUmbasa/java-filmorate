@@ -18,6 +18,7 @@ public final class FilmDtoMapper {
     private final GenreRepository genreRepository;
     private final RatingRepository ratingRepository;
     private final LikeRepository likeRepository;
+
     public static Film mapToFilm(FilmDto filmDto) {
         Film film = new Film();
         if (filmDto.getId() != null) {
