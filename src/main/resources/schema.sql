@@ -53,7 +53,6 @@ CREATE TABLE IF NOT EXISTS friendships (
     CHECK (requester_id <> addressee_id),
     CHECK (status IN ('pending', 'confirmed'))
 );
-
 INSERT INTO age_ratings (rating_id, rating_name)
 VALUES  (1,'G'),
         (2,'PG'),
