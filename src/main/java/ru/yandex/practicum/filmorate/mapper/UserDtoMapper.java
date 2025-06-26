@@ -29,9 +29,7 @@ public class UserDtoMapper {
         userDto.setName(user.getName());
         userDto.setBirthday(user.getBirthday());
         List<User> result = friendShipsRepository.findUserFriends(user.getId()).orElse(Collections.emptyList());
-        userDto.setFriends(result .stream()
-                .map(User::getId)
-                .toList());
+        userDto.setFriends(result.stream().map(User::getId).toList());
         return userDto;
     }
 }
