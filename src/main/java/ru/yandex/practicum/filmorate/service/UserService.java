@@ -4,12 +4,16 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
+import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.mapper.UserDtoMapper;
+import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.repository.FriendShipsRepository;
+import ru.yandex.practicum.filmorate.repository.UserRepository;
 import ru.yandex.practicum.filmorate.validator.Marker;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,92 +25,108 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class UserService {
-    private final UserStorage userStorage;
+    private final UserRepository userRepository;
+    private final FriendShipsRepository friendShipsRepository;
     private final Validator validator;
+    private final UserDtoMapper userDtoMapper;
 
-    public Collection<User> findAll() {
-        return userStorage.findAll();
-    }
-
-    public User findById(Long id) {
-        return userStorage.findById(id)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id " + id + " не найден"));
-    }
-
-    public List<User> findUserFriends(Long id) {
-        List<User> usersFriends = new ArrayList<>();
-        User user = findById(id);
-        for (Long ids : user.getFriends()) {
-            usersFriends.add(findById(ids));
+    public UserDto findById(Long userId) {
+        if (!checkUserExists(userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID");
         }
-        return usersFriends;
+        return userDtoMapper.mapToUserDto(userRepository.findById(userId));
     }
 
-    public List<User> findMutualFriends(Long id, Long otherId) {
-        Set<Long> friendsOfUser1 = findById(id).getFriends();
-        Set<Long> friendsOfUser2 = findById(otherId).getFriends();
-        Set<Long> mutualFriendIds = new HashSet<>(friendsOfUser1);
-        mutualFriendIds.retainAll(friendsOfUser2);
-        List<User> mutualFriends = mutualFriendIds.stream()
-                .map(this::findById)
-                .collect(Collectors.toList());
-        return mutualFriends;
+    public List<UserDto> findUserFriends(Long id) {
+        if (!checkUserExists(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ID пользователя не может быть null.");
+        }
+        List<User> result = friendShipsRepository.findUserFriends(id).orElse(new ArrayList<>());
+        return mapToUserDtoList(result);
     }
 
-    public void addUser(User user) {
-        userStorage.addUser(user);
-        log.info("Добавлен элемент: {}", user);
+    public List<UserDto> findMutualFriends(Long id, Long otherId) {
+        if(!checkUserExists(id) || !checkUserExists(otherId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID пользователя");
+        }
+        List<User> result = friendShipsRepository.findMutualFriends(id, otherId);
+        return mapToUserDtoList(result);
     }
 
     public void addFriends(Long id, Long friendId) {
-        User user1 = findById(id);
-        User user2 = findById(friendId);
-        user1.getFriends().add(friendId);
-        user2.getFriends().add(id);
+        if(!checkUserExists(id) || !checkUserExists(friendId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID пользователя");
+        }
+        friendShipsRepository.addFriends(id,friendId);
     }
 
-    public void updateUser(User user) {
-        User userUpdate = findById(user.getId());
-        // Валидация user
-        Set<ConstraintViolation<User>> violations = validator.validate(user, Marker.OnCreate.class);
-        // Если есть нарушения валидации, обрабатываем их
-        if (!violations.isEmpty()) {
-            // Создаем Map для хранения ошибок валидации по полям
-            Map<String, String> fieldErrors = new HashMap<>();
-            for (ConstraintViolation<User> violation : violations) {
-                fieldErrors.put(violation.getPropertyPath().toString(), violation.getMessage());
-                log.error("Ошибка валидации: " + violation.getPropertyPath() +
-                        " - " + violation.getMessage());
-            }
-
-            // Обновляем только те поля, для которых нет ошибок
-            if (!fieldErrors.containsKey("email")) {
-                userUpdate.setEmail(user.getEmail());
-            }
-
-            if (!fieldErrors.containsKey("login")) {
-                userUpdate.setLogin(user.getLogin());
-            }
-
-            if (!fieldErrors.containsKey("name")) {
-                userUpdate.setName(user.getName());
-            }
-
-            if (!fieldErrors.containsKey("birthday")) {
-                userUpdate.setBirthday(user.getBirthday());
-            }
-            log.info("Обновлен элемент частично: {}", userUpdate);
-        } else {
-            //если все поля валидные, то обновляем все
-            userUpdate = user;
-            log.info("Обновлен элемент: {}", user);
+    public void updateUser(UserDto userDto) {
+        if (!checkUserExists(userDto.getId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Некорректный ID пользователя");
         }
+        UserDto existingUser = findById(userDto.getId());
+        try {
+            validateUser(userDto);
+            existingUser.setEmail(userDto.getEmail());
+            existingUser.setLogin(userDto.getLogin());
+            existingUser.setName(userDto.getName());
+            existingUser.setBirthday(userDto.getBirthday());
+            log.info("Пользователь успешно обновлен: {}", existingUser);
+        } catch (ValidationException e) {
+            log.error("Ошибка валидации при обновлении пользователя: {}", e.getErrors());
+            throw e;  // Перебрасываем исключение, чтобы контроллер мог его обработать
+        }
+        User updatedUser = userDtoMapper.mapToUser(existingUser);
+        updatedUser.setId(userDto.getId());
+        userRepository.updateUser(updatedUser);
     }
 
     public void removeFriend(Long id, Long friendId) {
-        User user1 = findById(id);
-        User user2 = findById(friendId);
-        user1.getFriends().remove(friendId);
-        user2.getFriends().remove(id);
+        if(!checkUserExists(id) || !checkUserExists(friendId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID");
+        }
+        friendShipsRepository.removeFriend(id, friendId);
+    }
+
+    public UserDto addUser(UserDto userDto) {
+        User user = UserDtoMapper.mapToUser(userDto);
+        log.info("Добавлен элемент: {}", userDto);
+        return findById(userRepository.save(user));
+    }
+
+    public Collection<UserDto> findAll() {
+        return userRepository.findAll()
+                .stream()
+                .map(userDtoMapper::mapToUserDto)
+                .collect(Collectors.toList());
+    }
+
+    //------------------вспомогательные методы---------------------------
+    public boolean checkUserExists(Long userId) {
+        if(userId == null) {
+            return false;
+        }
+        return userRepository.existsUserById(userId);
+    }
+
+    private List<UserDto> mapToUserDtoList(List<User> result) {
+        return result.stream()
+                .map(userDtoMapper::mapToUserDto)  // Или .map(user -> mapToUserDto(user))
+                .collect(Collectors.toList());
+    }
+
+    private void validateUser(UserDto userDto) {
+        Set<ConstraintViolation<UserDto>> violations = validator.validate(userDto, Marker.OnCreate.class);  // Используем вашу группу валидации
+        if (!violations.isEmpty()) {
+            Map<String, String> errors = extractValidationErrors(violations);
+            throw new ValidationException("Ошибки валидации при обновлении пользователя", errors);
+        }
+    }
+
+    private Map<String, String> extractValidationErrors(Set<ConstraintViolation<UserDto>> violations) {
+        return violations.stream().collect(Collectors.toMap(
+                violation -> violation.getPropertyPath().toString(),
+                ConstraintViolation::getMessage
+        ));
     }
 }

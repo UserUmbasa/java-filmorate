@@ -1,0 +1,35 @@
+package ru.yandex.practicum.filmorate.controller;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.filmorate.dto.GenreDto;
+import ru.yandex.practicum.filmorate.service.FilmService;
+
+import java.util.Collection;
+
+@Validated
+@RestController
+@RequestMapping("/genres")
+@RequiredArgsConstructor
+public class GenreController {
+    private final FilmService filmService;
+
+    @GetMapping
+    public Collection<GenreDto> findAll() {
+        return filmService.findAllGenres();
+    }
+
+    @GetMapping("/{id}")
+    public GenreDto findByMpaId(@PathVariable Long id) {
+        if(!filmService.checkGenreExists(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID жанра");
+        }
+        return filmService.findByGenreId(id);
+    }
+}

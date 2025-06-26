@@ -1,16 +1,24 @@
 package ru.yandex.practicum.filmorate.service;
 
 import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.GenreDto;
+import ru.yandex.practicum.filmorate.dto.MpaDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.mapper.FilmDtoMapper;
+import ru.yandex.practicum.filmorate.mapper.GenreDtoMapper;
+import ru.yandex.practicum.filmorate.mapper.MpaDtoMapper;
+import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.repository.*;
 import ru.yandex.practicum.filmorate.validator.Marker;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,87 +30,169 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class FilmService {
-    private final FilmStorage filmStorage;
-    private final UserService userService;
-    private final Validator validator;
-    private final Comparator<Film> likesSizeComparator =
+    private final FilmRepository filmRepository;
+    private final GenreRepository genreRepository;
+    private final RatingRepository ratingRepository;
+    private final LikeRepository likeRepository;
+    private final UserRepository userRepository;
+    private final FilmDtoMapper filmDtoMapper;
+    private final Comparator<FilmDto> likesSizeDtoComparator =
             (film1, film2) -> Integer.compare(
                     film1.getLikes().size(),
                     film2.getLikes().size());
+    private final Validator validator;
 
-    public Collection<Film> findAll() {
-        return filmStorage.findAll();
-    }
-
-    public Film findById(Long id) {
-        return filmStorage.findById(id)
-                .orElseThrow(() -> new NotFoundException("Фильм с id " + id + " не найден"));
-    }
-
-    public Collection<Film> findFilmLike(Integer count) {
-        if (count == null) {
-            count = 10;
-        }
-        List<Film> sortedFilms = findAll().stream()
-                .sorted(likesSizeComparator.reversed())
+    public Collection<FilmDto> findAll() {
+        return filmRepository.findAll()
+                .stream()
+                .map(filmDtoMapper::mapToFilmDto)
                 .collect(Collectors.toList());
-        int actualCount = Math.min(count, sortedFilms.size());
-        return sortedFilms.subList(0, actualCount);
     }
 
-    public void addFilm(Film film) {
-        filmStorage.addFilm(film);
-        log.info("Добавлен элемент: {}", film);
+    public List<FilmDto> findFilmLike(Integer count) {
+        List<FilmDto> result = findAll().stream()
+                .sorted(likesSizeDtoComparator.reversed())
+                .toList();
+        int actualCount = Math.min(count, result.size());
+        return result.subList(0, actualCount);
     }
 
-    public void updateFilm(Film film) {
-        Film filmUpdate = findById(film.getId());
-        // проверка полей через validator
-        Set<ConstraintViolation<Film>> violations = validator.validate(film, Marker.OnCreate.class);
-
-        // Если есть нарушения валидации, обрабатываем их
-        if (!violations.isEmpty()) {
-            // Создаем Map для хранения ошибок валидации по полям
-            Map<String, String> fieldErrors = new HashMap<>();
-            for (ConstraintViolation<Film> violation : violations) {
-                fieldErrors.put(violation.getPropertyPath().toString(), violation.getMessage());
-                log.error("Ошибка валидации: " + violation.getPropertyPath() +
-                        " - " + violation.getMessage());
-            }
-
-            // Обновляем только те поля, для которых нет ошибок
-            if (!fieldErrors.containsKey("name")) {
-                filmUpdate.setName(film.getName());
-            }
-
-            if (!fieldErrors.containsKey("description")) {
-                filmUpdate.setDescription(film.getDescription());
-            }
-
-            if (!fieldErrors.containsKey("releaseDate")) {
-                filmUpdate.setReleaseDate(film.getReleaseDate());
-            }
-
-            if (!fieldErrors.containsKey("duration")) {
-                filmUpdate.setDuration(film.getDuration());
-            }
-            log.info("Обновлен элемент частично: {}", filmUpdate);
-        } else {
-            //если все поля валидные, то обновляем все
-            filmUpdate = film;
-            log.info("Обновлен элемент: {}", film);
+    public void updateFilm(FilmDto filmDto) {
+        if(!checkFilmExists(filmDto.getId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID фильма");
         }
+        FilmDto existingFilm = findById(filmDto.getId());
+        try {
+            validator.validate(filmDto, Marker.OnCreate.class);
+            existingFilm.setName(filmDto.getName());
+            existingFilm.setDescription(filmDto.getDescription());
+            existingFilm.setReleaseDate(filmDto.getReleaseDate());
+            existingFilm.setDuration(filmDto.getDuration());
+            log.info("Фильм успешно обновлен: {}", existingFilm);
+        } catch (ConstraintViolationException e) {
+            Map<String, String> errors = extractValidationErrors(e.getConstraintViolations());
+            throw new ValidationException("Ошибки валидации", errors);
+        }
+
+        Film updatedFilm = FilmDtoMapper.mapToFilm(existingFilm);
+        filmRepository.updateFilm(updatedFilm);
     }
 
     public void putLikeFilm(Long idFilm, Long idUser) {
-        User user = userService.findById(idUser);
-        Film result = findById(idFilm);
-        result.getLikes().add(user.getId());
+        if(!checkFilmExists(idFilm) && !checkUserExists(idUser)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID");
+        }
+        likeRepository.save(List.of(new Like(idUser,idFilm)));
     }
 
     public void deleteLikeFilm(Long idFilm, Long idUser) {
-        User user = userService.findById(idUser);
-        Film result = findById(idFilm);
-        result.getLikes().remove(user.getId());
+        if(!checkFilmExists(idFilm) && !checkUserExists(idUser)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID");
+        }
+        likeRepository.delete(new Like(idFilm,idUser));
+    }
+
+    public FilmDto addFilm(FilmDto filmDto) {
+        Film film;
+        List<Genre> genres = new ArrayList<>();
+        List<Like> likes = new ArrayList<>();
+        film = FilmDtoMapper.mapToFilm(filmDto);
+        if(filmDto.getMpa() != null  && !checkMpaExists(filmDto.getMpa().getId())) {
+            throw  new NotFoundException("такого рейтинга нет");
+        }
+        film.setRatingId(filmDto.getMpa().getId());
+        if (filmDto.getGenres() != null) {
+            for (GenreDto genreDto : filmDto.getGenres()) {
+                if(!checkGenreExists(genreDto.getId())){
+                    throw  new NotFoundException("такого жанра нет");
+                }
+                genres.add(genreRepository.findById(genreDto.getId()));
+            }
+        }
+        if(filmDto.getLikes() != null) {
+            for (Long userId : filmDto.getLikes()) {
+                if(!checkUserExists(userId)) {
+                    throw  new NotFoundException("такого user нет");
+                }
+                User result = userRepository.findById(userId);
+                likes.add(new Like(userId, film.getId()));
+            }
+        }
+        // Сохранение
+        Long id = filmRepository.save(film);
+        genreRepository.save(genres, film.getId());
+        likeRepository.save(likes);
+        FilmDto dto = findById(id);
+        log.info("Добавлен элемент: {}", filmDto);
+        return dto;
+    }
+
+    public FilmDto findById(Long id) {
+        if(!checkFilmExists(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID фильма");
+        }
+        return filmDtoMapper.mapToFilmDto(filmRepository.findById(id));
+    }
+
+    //-------------------MPA----------------------------------
+    public Collection<MpaDto> findAllMpa() {
+        return ratingRepository.findAll()
+                .stream()
+                .map(MpaDtoMapper::mapToMpaDTO)
+                .collect(Collectors.toList());
+    }
+
+    public MpaDto findByMpaId(Long id) {
+        return MpaDtoMapper.mapToMpaDTO(ratingRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("MPA с id " + id + " не найден")));
+    }
+
+    //-------------------Genre----------------------------------
+    public Collection<GenreDto> findAllGenres() {
+        return genreRepository.findAll()
+                .stream()
+                .map(GenreDtoMapper::mapToGenreDto)
+                .collect(Collectors.toList());
+    }
+
+    public GenreDto findByGenreId(Long id) {
+        if(!checkGenreExists(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID жанра");
+        }
+        return GenreDtoMapper.mapToGenreDto(genreRepository.findById(id));
+    }
+
+    //-------------- вспомогательные методы ---------------
+    public boolean checkFilmExists(Long filmId) {
+        if(filmId == null) {
+            return false;
+        }
+        return filmRepository.existsFilmById(filmId);
+    }
+
+    public boolean checkUserExists(Long userId) {
+        if(userId == null) {
+            return false;
+        }
+        return userRepository.existsUserById(userId);
+    }
+
+    public boolean checkMpaExists(Long mpaId) {
+        return ratingRepository.existsMpaById(mpaId);
+    }
+
+    public boolean checkGenreExists(Long genreId) {
+        if (genreId == null) {
+            return false;
+        }
+        return genreRepository.existsGenreById(genreId);
+    }
+
+    private Map<String, String> extractValidationErrors(Set<ConstraintViolation<?>> violations) {
+        return violations.stream()
+                .collect(Collectors.toMap(
+                        violation -> violation.getPropertyPath().toString(),
+                        violation -> violation.getMessage()
+                ));
     }
 }
