@@ -17,14 +17,14 @@ public class UserRepository {
     SELECT user_id, email, login, name, birthday FROM users
     """;
     private static final String CHECK_USER = """
-    SELECT CASE 
+    SELECT CASE\s
         WHEN EXISTS (
-           SELECT 1 
-           FROM users 
+           SELECT 1\s
+           FROM users\s
            WHERE user_id = ?
-        ) THEN true 
+        ) THEN true\s
         ELSE false END
-    """;
+   \s""";
     private static final String FIND_BY_ID_QUERY = """
     SELECT * FROM users WHERE user_id = ?
     """;
@@ -33,10 +33,10 @@ public class UserRepository {
     VALUES (?, ?, ?, ?)
     """;
     private static final String UPDATE_USER = """
-    UPDATE users 
-    SET email = ?, login = ?, name = ?, birthday = ? 
+    UPDATE users\s
+    SET email = ?, login = ?, name = ?, birthday = ?\s
     WHERE user_id = ?
-    """;
+   \s""";
 
 
     public Long save(User user) {

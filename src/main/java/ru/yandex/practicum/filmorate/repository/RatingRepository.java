@@ -15,14 +15,14 @@ import java.util.Optional;
 public class RatingRepository {
     private final JdbcTemplate jdbc;
     private static final String CHECK_USER = """
-    SELECT CASE 
+    SELECT CASE\s
         WHEN EXISTS (
-           SELECT 1 
-           FROM AGE_RATINGS 
+           SELECT 1\s
+           FROM AGE_RATINGS\s
            WHERE RATING_ID = ?
-        ) THEN true 
+        ) THEN true\s
         ELSE false END
-    """;
+   \s""";
     private static final String FIND_ALL_QUERY = """
     SELECT * FROM age_ratings ORDER BY rating_id
     """;

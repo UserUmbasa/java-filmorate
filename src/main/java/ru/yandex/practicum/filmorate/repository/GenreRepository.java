@@ -16,14 +16,14 @@ import java.util.Optional;
 public class GenreRepository {
     private final JdbcTemplate jdbc;
     private static final String CHECK_GENRE = """
-    SELECT CASE 
+    SELECT CASE\s
         WHEN EXISTS (
-           SELECT 1 
-           FROM genres 
+           SELECT 1\s
+           FROM genres\s
            WHERE genre_id = ?
-        ) THEN true 
+        ) THEN true\s
         ELSE false END
-    """;
+   \s""";
     private static final String FIND_GENRES_BY_FILM_ID =  """
     SELECT g.genre_id, g.name
     FROM genres g

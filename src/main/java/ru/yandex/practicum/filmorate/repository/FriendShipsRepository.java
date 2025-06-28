@@ -22,33 +22,33 @@ public class FriendShipsRepository {
     UPDATE friendships SET status = ? WHERE requester_id = ? AND addressee_id = ?
     """;
     private static final String FIND_USER_FRIENDS = """
-    SELECT u.user_id, u.email, u.login, u.name, u.birthday 
-    FROM users u 
-    WHERE u.user_id IN ( 
-       SELECT addressee_id FROM friendships WHERE requester_id = ? 
-       UNION 
-       SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed' 
+    SELECT u.user_id, u.email, u.login, u.name, u.birthday\s
+    FROM users u\s
+    WHERE u.user_id IN (\s
+       SELECT addressee_id FROM friendships WHERE requester_id = ?\s
+       UNION\s
+       SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed'\s
     )
-    """;
+   \s""";
     private static final String FIND_MUTUAL_FRIENDS = """
-    SELECT u.user_id, u.email, u.login, u.name, u.birthday 
-    FROM users u 
-    WHERE u.user_id IN ( 
-       SELECT addressee_id FROM friendships WHERE requester_id = ? 
-       UNION 
-       SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed' 
-    ) 
-    AND u.user_id IN ( 
-       SELECT addressee_id FROM friendships WHERE requester_id = ? 
-       UNION 
-       SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed' 
+    SELECT u.user_id, u.email, u.login, u.name, u.birthday\s
+    FROM users u\s
+    WHERE u.user_id IN (\s
+       SELECT addressee_id FROM friendships WHERE requester_id = ?\s
+       UNION\s
+       SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed'\s
+    )\s
+    AND u.user_id IN (\s
+       SELECT addressee_id FROM friendships WHERE requester_id = ?\s
+       UNION\s
+       SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed'\s
     )
-    """;
+   \s""";
     private static final String REMOVE_FRIENDS = """
-    DELETE FROM friendships 
-    WHERE (requester_id = ? AND addressee_id = ?) 
+    DELETE FROM friendships\s
+    WHERE (requester_id = ? AND addressee_id = ?)\s
     OR (requester_id = ? AND addressee_id = ? AND status = 'confirmed')
-    """;
+   \s""";
 
     public Optional<List<User>> findUserFriends(Long userId) {
         try {
