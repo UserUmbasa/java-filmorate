@@ -17,13 +17,7 @@ public class FilmRepository {
     SELECT * FROM films
     """;
     private static final String CHECK_FILM = """
-    SELECT CASE 
-        WHEN EXISTS (
-           SELECT 1 
-           FROM films 
-           WHERE film_id = ?
-        ) THEN true 
-        ELSE false END
+    SELECT CASE WHEN EXISTS (SELECT 1 FROM films WHERE film_id = ?) THEN true ELSE false END
     """;
     private static final String FIND_BY_ID_QUERY = """
     SELECT * FROM films WHERE film_id = ?
@@ -33,10 +27,10 @@ public class FilmRepository {
     VALUES (?, ?, ?, ?, ?)
     """;
     private static final String UPDATE_QUERY = """
-    UPDATE films 
-    SET name = ?, description = ?, release_date = ?, duration = ?, rating_id = ? 
+    UPDATE films\s
+    SET name = ?, description = ?, release_date = ?, duration = ?, rating_id = ?\s
     WHERE film_id = ?
-    """;
+   \s""";
 
 
     public Long save(Film film) {
