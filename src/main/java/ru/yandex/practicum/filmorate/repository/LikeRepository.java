@@ -12,10 +12,17 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class LikeRepository {
     private final JdbcTemplate jdbc;
-    private static final String FIND_LIKES_BY_FILM_ID = "SELECT user_id FROM film_likes WHERE film_id = ?";
-    private static final String INSERT_QUERY = "INSERT INTO film_likes(user_id, film_id)" +
-            "VALUES (?, ?)";
-    private static final String DELETE_QUERY = "DELETE FROM film_likes WHERE user_id = ? AND film_id = ?";
+    private static final String FIND_LIKES_BY_FILM_ID = """
+    SELECT user_id FROM film_likes WHERE film_id = ?
+    """;
+    private static final String INSERT_QUERY = """
+    INSERT INTO film_likes(user_id, film_id)
+    VALUES (?, ?)
+    """;
+    private static final String DELETE_QUERY = """
+    DELETE FROM film_likes WHERE user_id = ? AND film_id = ?
+    """;
+
 
     public void save(List<Like> likes) {
         for (Like like : likes) {

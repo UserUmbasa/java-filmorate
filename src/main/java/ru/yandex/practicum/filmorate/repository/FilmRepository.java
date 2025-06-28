@@ -13,20 +13,31 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class FilmRepository {
     private final JdbcTemplate jdbc;
-    private static final String FIND_ALL_QUERY = "SELECT * FROM films";
-    private static final String CHECK_FILM = "SELECT CASE " +
-            "WHEN EXISTS (" +
-            "   SELECT 1 " +
-            "   FROM films " +
-            "   WHERE film_id = ?" +
-            ") THEN true " +
-            "ELSE false END";
-    private static final String FIND_BY_ID_QUERY = "SELECT * FROM films WHERE film_id = ?";
-    private static final String INSERT_QUERY = "INSERT INTO films(name, description, release_date, duration, rating_Id)" +
-            "VALUES (?, ?, ?, ?, ?)";
-    private static final String UPDATE_QUERY = "UPDATE films " +
-            "SET name = ?, description = ?, release_date = ?, duration = ?, rating_id = ? " +
-            "WHERE film_id = ?";
+    private static final String FIND_ALL_QUERY = """
+    SELECT * FROM films
+    """;
+    private static final String CHECK_FILM = """
+    SELECT CASE 
+        WHEN EXISTS (
+           SELECT 1 
+           FROM films 
+           WHERE film_id = ?
+        ) THEN true 
+        ELSE false END
+    """;
+    private static final String FIND_BY_ID_QUERY = """
+    SELECT * FROM films WHERE film_id = ?
+    """;
+    private static final String INSERT_QUERY = """
+    INSERT INTO films(name, description, release_date, duration, rating_Id)
+    VALUES (?, ?, ?, ?, ?)
+    """;
+    private static final String UPDATE_QUERY = """
+    UPDATE films 
+    SET name = ?, description = ?, release_date = ?, duration = ?, rating_id = ? 
+    WHERE film_id = ?
+    """;
+
 
     public Long save(Film film) {
         KeyHolder keyHolder = new GeneratedKeyHolder();

@@ -13,20 +13,31 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class UserRepository {
     private final JdbcTemplate jdbc;
-    private static final String FIND_ALL_QUERY = "SELECT user_id, email, login, name, birthday FROM users";
-    private static final String CHECK_USER = "SELECT CASE " +
-            "WHEN EXISTS (" +
-            "   SELECT 1 " +
-            "   FROM users " +
-            "   WHERE user_id = ?" +
-            ") THEN true " +
-            "ELSE false END";
-    private static final String FIND_BY_ID_QUERY = "SELECT * FROM users WHERE user_id = ?";
-    private static final String INSERT_QUERY = "INSERT INTO users(email, login, name, birthday)" +
-            "VALUES (?, ?, ?, ?)";
-    private static final String UPDATE_USER = "UPDATE users " +
-            "SET email = ?, login = ?, name = ?, birthday = ? " +
-            "WHERE user_id = ?";
+    private static final String FIND_ALL_QUERY = """
+    SELECT user_id, email, login, name, birthday FROM users
+    """;
+    private static final String CHECK_USER = """
+    SELECT CASE 
+        WHEN EXISTS (
+           SELECT 1 
+           FROM users 
+           WHERE user_id = ?
+        ) THEN true 
+        ELSE false END
+    """;
+    private static final String FIND_BY_ID_QUERY = """
+    SELECT * FROM users WHERE user_id = ?
+    """;
+    private static final String INSERT_QUERY = """
+    INSERT INTO users(email, login, name, birthday)
+    VALUES (?, ?, ?, ?)
+    """;
+    private static final String UPDATE_USER = """
+    UPDATE users 
+    SET email = ?, login = ?, name = ?, birthday = ? 
+    WHERE user_id = ?
+    """;
+
 
     public Long save(User user) {
         KeyHolder keyHolder = new GeneratedKeyHolder();

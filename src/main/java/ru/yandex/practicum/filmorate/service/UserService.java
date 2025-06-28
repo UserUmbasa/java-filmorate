@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.mapper.UserDtoMapper;
+import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.repository.FriendShipsRepository;
 import ru.yandex.practicum.filmorate.repository.UserRepository;
@@ -17,10 +17,7 @@ import ru.yandex.practicum.filmorate.validator.Marker;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * будет отвечать за такие операции с пользователями, как добавление в друзья, удаление из друзей,
- * вывод списка общих друзей
- */
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -28,13 +25,14 @@ public class UserService {
     private final UserRepository userRepository;
     private final FriendShipsRepository friendShipsRepository;
     private final Validator validator;
-    private final UserDtoMapper userDtoMapper;
+    private final UserMapper userMapper;
+
 
     public UserDto findById(Long userId) {
         if (checkUserExists(userId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID");
         }
-        return userDtoMapper.mapToUserDto(userRepository.findById(userId));
+        return userMapper.mapToUserDto(userRepository.findById(userId));
     }
 
     public List<UserDto> findUserFriends(Long id) {
@@ -74,9 +72,9 @@ public class UserService {
             log.info("Пользователь успешно обновлен: {}", existingUser);
         } catch (ValidationException e) {
             log.error("Ошибка валидации при обновлении пользователя: {}", e.getErrors());
-            throw e;  // Перебрасываем исключение, чтобы контроллер мог его обработать
+            throw e;
         }
-        User updatedUser = userDtoMapper.mapToUser(existingUser);
+        User updatedUser = userMapper.mapToUser(existingUser);
         updatedUser.setId(userDto.getId());
         userRepository.updateUser(updatedUser);
     }
@@ -89,7 +87,7 @@ public class UserService {
     }
 
     public UserDto addUser(UserDto userDto) {
-        User user = UserDtoMapper.mapToUser(userDto);
+        User user = userMapper.mapToUser(userDto);
         log.info("Добавлен элемент: {}", userDto);
         return findById(userRepository.save(user));
     }
@@ -97,7 +95,7 @@ public class UserService {
     public Collection<UserDto> findAll() {
         return userRepository.findAll()
                 .stream()
-                .map(userDtoMapper::mapToUserDto)
+                .map(userMapper::mapToUserDto)
                 .collect(Collectors.toList());
     }
 
@@ -111,7 +109,7 @@ public class UserService {
 
     private List<UserDto> mapToUserDtoList(List<User> result) {
         return result.stream()
-                .map(userDtoMapper::mapToUserDto)  // Или .map(user -> mapToUserDto(user))
+                .map(userMapper::mapToUserDto)  // Или .map(user -> mapToUserDto(user))
                 .collect(Collectors.toList());
     }
 

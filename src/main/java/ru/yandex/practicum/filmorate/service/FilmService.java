@@ -13,19 +13,15 @@ import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.dto.MpaDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.mapper.FilmDtoMapper;
-import ru.yandex.practicum.filmorate.mapper.GenreDtoMapper;
-import ru.yandex.practicum.filmorate.mapper.MpaDtoMapper;
+import ru.yandex.practicum.filmorate.mapper.FilmMapper;
+import ru.yandex.practicum.filmorate.mapper.GenreMapper;
+import ru.yandex.practicum.filmorate.mapper.MpaMapper;
 import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.repository.*;
 import ru.yandex.practicum.filmorate.validator.Marker;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * будет отвечать за операции с фильмами — добавление и удаление лайка, вывод 10 наиболее популярных
- * фильмов по количеству лайков
- */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -35,67 +31,21 @@ public class FilmService {
     private final RatingRepository ratingRepository;
     private final LikeRepository likeRepository;
     private final UserRepository userRepository;
-    private final FilmDtoMapper filmDtoMapper;
+    private final FilmMapper filmMapper;
+    private final GenreMapper genreMapper;
+    private final MpaMapper mpaMapper;
+
     private final Comparator<FilmDto> likesSizeDtoComparator =
             (film1, film2) -> Integer.compare(
                     film1.getLikes().size(),
                     film2.getLikes().size());
     private final Validator validator;
 
-    public Collection<FilmDto> findAll() {
-        return filmRepository.findAll()
-                .stream()
-                .map(filmDtoMapper::mapToFilmDto)
-                .collect(Collectors.toList());
-    }
-
-    public List<FilmDto> findFilmLike(Integer count) {
-        List<FilmDto> result = findAll().stream()
-                .sorted(likesSizeDtoComparator.reversed())
-                .toList();
-        int actualCount = Math.min(count, result.size());
-        return result.subList(0, actualCount);
-    }
-
-    public void updateFilm(FilmDto filmDto) {
-        if (!checkFilmExists(filmDto.getId())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID фильма");
-        }
-        FilmDto existingFilm = findById(filmDto.getId());
-        try {
-            validator.validate(filmDto, Marker.OnCreate.class);
-            existingFilm.setName(filmDto.getName());
-            existingFilm.setDescription(filmDto.getDescription());
-            existingFilm.setReleaseDate(filmDto.getReleaseDate());
-            existingFilm.setDuration(filmDto.getDuration());
-            log.info("Фильм успешно обновлен: {}", existingFilm);
-        } catch (ConstraintViolationException e) {
-            Map<String, String> errors = extractValidationErrors(e.getConstraintViolations());
-            throw new ValidationException("Ошибки валидации", errors);
-        }
-        Film updatedFilm = FilmDtoMapper.mapToFilm(existingFilm);
-        filmRepository.updateFilm(updatedFilm);
-    }
-
-    public void putLikeFilm(Long idFilm, Long idUser) {
-        if (!checkFilmExists(idFilm) && checkUserExists(idUser)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID");
-        }
-        likeRepository.save(List.of(new Like(idUser,idFilm)));
-    }
-
-    public void deleteLikeFilm(Long idFilm, Long idUser) {
-        if (!checkFilmExists(idFilm) && checkUserExists(idUser)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID");
-        }
-        likeRepository.delete(new Like(idFilm,idUser));
-    }
-
     public FilmDto addFilm(FilmDto filmDto) {
         Film film;
         List<Genre> genres = new ArrayList<>();
         List<Like> likes = new ArrayList<>();
-        film = FilmDtoMapper.mapToFilm(filmDto);
+        film = filmMapper.mapToFilm(filmDto);
         if (filmDto.getMpa() != null  && !checkMpaExists(filmDto.getMpa().getId())) {
             throw  new NotFoundException("такого рейтинга нет");
         }
@@ -126,23 +76,73 @@ public class FilmService {
         return dto;
     }
 
+
+    public Collection<FilmDto> findAll() {
+        return filmRepository.findAll()
+                .stream()
+                .map(filmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<FilmDto> findFilmLike(Integer count) {
+        List<FilmDto> result = findAll().stream()
+                .sorted(likesSizeDtoComparator.reversed())
+                .toList();
+        int actualCount = Math.min(count, result.size());
+        return result.subList(0, actualCount);
+    }
+
+    public void updateFilm(FilmDto filmDto) {
+        if (!checkFilmExists(filmDto.getId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID фильма");
+        }
+        FilmDto existingFilm = findById(filmDto.getId());
+        try {
+            validator.validate(filmDto, Marker.OnCreate.class);
+            existingFilm.setName(filmDto.getName());
+            existingFilm.setDescription(filmDto.getDescription());
+            existingFilm.setReleaseDate(filmDto.getReleaseDate());
+            existingFilm.setDuration(filmDto.getDuration());
+            log.info("Фильм успешно обновлен: {}", existingFilm);
+        } catch (ConstraintViolationException e) {
+            Map<String, String> errors = extractValidationErrors(e.getConstraintViolations());
+            throw new ValidationException("Ошибки валидации", errors);
+        }
+        Film updatedFilm = filmMapper.mapToFilm(existingFilm);
+        filmRepository.updateFilm(updatedFilm);
+    }
+
+    public void putLikeFilm(Long idFilm, Long idUser) {
+        if (!checkFilmExists(idFilm) && checkUserExists(idUser)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID");
+        }
+        likeRepository.save(List.of(new Like(idUser,idFilm)));
+    }
+
+    public void deleteLikeFilm(Long idFilm, Long idUser) {
+        if (!checkFilmExists(idFilm) && checkUserExists(idUser)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректные ID");
+        }
+        likeRepository.delete(new Like(idFilm,idUser));
+    }
+
     public FilmDto findById(Long id) {
         if (!checkFilmExists(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID фильма");
         }
-        return filmDtoMapper.mapToFilmDto(filmRepository.findById(id));
+        return filmMapper.mapToFilmDto(filmRepository.findById(id));
     }
 
     //-------------------MPA----------------------------------
     public Collection<MpaDto> findAllMpa() {
         return ratingRepository.findAll()
                 .stream()
-                .map(MpaDtoMapper::mapToMpaDTO)
+                .map(mpaMapper::mapToMpaDTO)
                 .collect(Collectors.toList());
     }
 
     public MpaDto findByMpaId(Long id) {
-        return MpaDtoMapper.mapToMpaDTO(ratingRepository.findById(id)
+        return mpaMapper.mapToMpaDTO(ratingRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("MPA с id " + id + " не найден")));
     }
 
@@ -150,7 +150,7 @@ public class FilmService {
     public Collection<GenreDto> findAllGenres() {
         return genreRepository.findAll()
                 .stream()
-                .map(GenreDtoMapper::mapToGenreDto)
+                .map(genreMapper::mapToGenreDto)
                 .collect(Collectors.toList());
     }
 
@@ -158,7 +158,7 @@ public class FilmService {
         if (checkGenreExists(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Не корректный ID жанра");
         }
-        return GenreDtoMapper.mapToGenreDto(genreRepository.findById(id));
+        return genreMapper.mapToGenreDto(genreRepository.findById(id));
     }
 
     //-------------- вспомогательные методы ---------------

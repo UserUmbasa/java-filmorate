@@ -15,23 +15,31 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class GenreRepository {
     private final JdbcTemplate jdbc;
-    private static final String CHECK_GENRE = "SELECT CASE " +
-            "WHEN EXISTS (" +
-            "   SELECT 1 " +
-            "   FROM genres " +
-            "   WHERE genre_id = ?" +
-            ") THEN true " +
-            "ELSE false END";
+    private static final String CHECK_GENRE = """
+    SELECT CASE 
+        WHEN EXISTS (
+           SELECT 1 
+           FROM genres 
+           WHERE genre_id = ?
+        ) THEN true 
+        ELSE false END
+    """;
     private static final String FIND_GENRES_BY_FILM_ID =  """
-            SELECT g.genre_id, g.name
-            FROM genres g
-            JOIN film_genres fg ON g.genre_id = fg.genre_id
-            WHERE fg.film_id = ?
-        """;
-    private static final String INSERT_QUERY = "INSERT INTO FILM_GENRES(film_id, genre_id)" +
-            "VALUES (?, ?)";
-    private static final String FIND_ALL_QUERY = "SELECT * FROM GENRES ORDER BY genre_id";
-    private static final String FIND_BY_ID_QUERY = "SELECT * FROM GENRES WHERE genre_id = ?";
+    SELECT g.genre_id, g.name
+    FROM genres g
+    JOIN film_genres fg ON g.genre_id = fg.genre_id
+    WHERE fg.film_id = ?
+    """;
+    private static final String INSERT_QUERY = """
+    INSERT INTO FILM_GENRES(film_id, genre_id)
+    VALUES (?, ?)
+    """;
+    private static final String FIND_ALL_QUERY = """
+    SELECT * FROM GENRES ORDER BY genre_id
+    """;
+    private static final String FIND_BY_ID_QUERY = """
+    SELECT * FROM GENRES WHERE genre_id = ?
+    """;
 
     public Collection<Genre> findAll() {
         return jdbc.query(

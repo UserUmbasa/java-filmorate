@@ -12,31 +12,43 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class FriendShipsRepository {
     private final JdbcTemplate jdbc;
-    private static final String ADD_FRIENDS = "INSERT INTO friendships (requester_id, addressee_id, status) VALUES (?, ?, ?)";
-    private static final String CHECK_REVERSE_FRIENDSHIP = "SELECT status FROM friendships WHERE requester_id = ? AND addressee_id = ?";
-    private static final String UPDATE_STATUS = "UPDATE friendships SET status = ? WHERE requester_id = ? AND addressee_id = ?";
-    private static final String FIND_USER_FRIENDS = "SELECT u.user_id, u.email, u.login, u.name, u.birthday " +
-            "FROM users u " +
-            "WHERE u.user_id IN ( " +
-            "   SELECT addressee_id FROM friendships WHERE requester_id = ? " +
-            "   UNION " +
-            "   SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed' " +
-            ")";
-    private static final String FIND_MUTUAL_FRIENDS = "SELECT u.user_id, u.email, u.login, u.name, u.birthday " +
-            "FROM users u " +
-            "WHERE u.user_id IN ( " +
-            "   SELECT addressee_id FROM friendships WHERE requester_id = ? " +
-            "   UNION " +
-            "   SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed' " +
-            ") " +
-            "AND u.user_id IN ( " +
-            "   SELECT addressee_id FROM friendships WHERE requester_id = ? " +
-            "   UNION " +
-            "   SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed' " +
-            ")";
-    private static final String REMOVE_FRIENDS = "DELETE FROM friendships " +
-            "WHERE (requester_id = ? AND addressee_id = ?) " +
-            "OR (requester_id = ? AND addressee_id = ? AND status = 'confirmed')";
+    private static final String ADD_FRIENDS = """
+    INSERT INTO friendships (requester_id, addressee_id, status) VALUES (?, ?, ?)
+    """;
+    private static final String CHECK_REVERSE_FRIENDSHIP = """
+    SELECT status FROM friendships WHERE requester_id = ? AND addressee_id = ?
+    """;
+    private static final String UPDATE_STATUS = """
+    UPDATE friendships SET status = ? WHERE requester_id = ? AND addressee_id = ?
+    """;
+    private static final String FIND_USER_FRIENDS = """
+    SELECT u.user_id, u.email, u.login, u.name, u.birthday 
+    FROM users u 
+    WHERE u.user_id IN ( 
+       SELECT addressee_id FROM friendships WHERE requester_id = ? 
+       UNION 
+       SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed' 
+    )
+    """;
+    private static final String FIND_MUTUAL_FRIENDS = """
+    SELECT u.user_id, u.email, u.login, u.name, u.birthday 
+    FROM users u 
+    WHERE u.user_id IN ( 
+       SELECT addressee_id FROM friendships WHERE requester_id = ? 
+       UNION 
+       SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed' 
+    ) 
+    AND u.user_id IN ( 
+       SELECT addressee_id FROM friendships WHERE requester_id = ? 
+       UNION 
+       SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'confirmed' 
+    )
+    """;
+    private static final String REMOVE_FRIENDS = """
+    DELETE FROM friendships 
+    WHERE (requester_id = ? AND addressee_id = ?) 
+    OR (requester_id = ? AND addressee_id = ? AND status = 'confirmed')
+    """;
 
     public Optional<List<User>> findUserFriends(Long userId) {
         try {

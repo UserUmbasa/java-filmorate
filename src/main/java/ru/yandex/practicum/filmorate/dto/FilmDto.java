@@ -12,10 +12,7 @@ import ru.yandex.practicum.filmorate.model.MPA;
 import ru.yandex.practicum.filmorate.validator.Marker;
 import ru.yandex.practicum.filmorate.validator.MinDate;
 
-/**
- * Java классы, которые будут представлять структуру JSON-запроса:
- */
-@Data // Lombok annotation to generate getters, setters, equals, hashCode, toString
+@Data
 public class FilmDto {
     @NotNull(groups = Marker.OnUpdate.class, message = "Id не должен быть пустым")
     private Long id;

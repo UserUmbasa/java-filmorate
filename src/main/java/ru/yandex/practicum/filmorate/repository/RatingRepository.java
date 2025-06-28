@@ -14,16 +14,24 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class RatingRepository {
     private final JdbcTemplate jdbc;
-    private static final String CHECK_USER = "SELECT CASE " +
-            "WHEN EXISTS (" +
-            "   SELECT 1 " +
-            "   FROM AGE_RATINGS " +
-            "   WHERE RATING_ID = ?" +
-            ") THEN true " +
-            "ELSE false END";
-    private static final String FIND_ALL_QUERY = "SELECT * FROM age_ratings ORDER BY rating_id";
-    private static final String FIND_BY_ID_QUERY = "SELECT * FROM age_ratings WHERE rating_id = ?";
-    private static final String FIND_RATING_NAME_ID_QUERY = "SELECT rating_name FROM age_ratings WHERE rating_id = ?";
+    private static final String CHECK_USER = """
+    SELECT CASE 
+        WHEN EXISTS (
+           SELECT 1 
+           FROM AGE_RATINGS 
+           WHERE RATING_ID = ?
+        ) THEN true 
+        ELSE false END
+    """;
+    private static final String FIND_ALL_QUERY = """
+    SELECT * FROM age_ratings ORDER BY rating_id
+    """;
+    private static final String FIND_BY_ID_QUERY = """
+    SELECT * FROM age_ratings WHERE rating_id = ?
+    """;
+    private static final String FIND_RATING_NAME_ID_QUERY = """
+    SELECT rating_name FROM age_ratings WHERE rating_id = ?
+    """;
 
     public String getRatingNameById(Long ratingId) {
         return jdbc.queryForObject(FIND_RATING_NAME_ID_QUERY, new Object[]{ratingId}, String.class);
